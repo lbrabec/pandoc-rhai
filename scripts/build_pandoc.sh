@@ -14,7 +14,7 @@ PROJECT_DIR="${SCRIPT_DIR}/.."
 HACKAGE_DIR="${1:-${PROJECT_DIR}/hackage-packages}"
 OUTPUT_DIR="${2:-${PROJECT_DIR}/pandoc_rhai/data/bin}"
 CABAL_PROJECT="${PROJECT_DIR}/pandoc.cabal.project"
-PANDOC_VERSION="3.7.0.2"
+PANDOC_VERSION="3.9.0.2"
 
 : "${GHC_PATH:?GHC_PATH env var must be set (directory containing ghc)}"
 : "${CABAL_PATH:?CABAL_PATH env var must be set (directory containing cabal)}"
