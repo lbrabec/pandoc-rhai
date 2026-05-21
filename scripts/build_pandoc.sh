@@ -2,8 +2,10 @@
 # Build pandoc from pre-fetched hackage packages.
 # Build phase — no network access, fully offline.
 #
-# Requires env: GHC_PATH  (directory containing ghc binary)
-#               CABAL_PATH (directory containing cabal binary)
+# Requires env: GHC_PATH      (directory containing ghc binary)
+#               CABAL_PATH    (directory containing cabal binary, unless BUILD_CABAL=true)
+#               BUILD_CABAL   (optional, "true" to bootstrap cabal-install from source)
+#               CABAL_BOOTSTRAP_DIR (optional, path to cabal bootstrap sources)
 #
 # Usage: ./scripts/build_pandoc.sh [HACKAGE_DIR] [OUTPUT_DIR]
 set -euo pipefail
@@ -17,8 +19,19 @@ CABAL_PROJECT="${PROJECT_DIR}/pandoc.cabal.project"
 PANDOC_VERSION="3.9.0.2"
 
 : "${GHC_PATH:?GHC_PATH env var must be set (directory containing ghc)}"
-: "${CABAL_PATH:?CABAL_PATH env var must be set (directory containing cabal)}"
-export PATH="${CABAL_PATH}:${GHC_PATH}:${PATH}"
+export PATH="${GHC_PATH}:${PATH}"
+
+BUILD_CABAL="${BUILD_CABAL:-false}"
+if [[ "${BUILD_CABAL,,}" == "true" ]]; then
+    echo "=== BUILD_CABAL=true: bootstrapping cabal-install from source ==="
+    CABAL_BOOTSTRAP_DIR="${CABAL_BOOTSTRAP_DIR:-${PROJECT_DIR}/cabal-bootstrap}"
+    CABAL_OUTPUT_DIR="${PROJECT_DIR}/cabal-bin"
+    "${SCRIPT_DIR}/build_cabal.sh" "${CABAL_BOOTSTRAP_DIR}" "${CABAL_OUTPUT_DIR}"
+    CABAL_PATH="${CABAL_OUTPUT_DIR}"
+else
+    : "${CABAL_PATH:?CABAL_PATH env var must be set (directory containing cabal) or set BUILD_CABAL=true}"
+fi
+export PATH="${CABAL_PATH}:${PATH}"
 
 if [[ ! -d "${HACKAGE_DIR}" ]]; then
     echo "Error: hackage packages directory not found: ${HACKAGE_DIR}" >&2
@@ -55,8 +68,11 @@ tar xf "${HACKAGE_ABS}/pandoc-cli-${PANDOC_VERSION}.tar.gz"
 cd "pandoc-cli-${PANDOC_VERSION}"
 cp "${CABAL_PROJECT}" cabal.project
 
+# Index the local repository
+cabal update
+
 mkdir -p "${BUILD_DIR}/install/bin"
-cabal build --offline -v -j"$(nproc)" pandoc-cli
+cabal build -v -j4 pandoc-cli
 
 find "${BUILD_DIR}" -name pandoc -type f -executable -exec cp {} "${BUILD_DIR}/install/bin/" \;
 

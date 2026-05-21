@@ -1,10 +1,8 @@
 -- Cabal project file for building pandoc
--- Used by both fetch-pandoc.sh and Containerfile.pandoc
+-- The local-hackage repository is configured by the build scripts
+-- (build_pandoc.sh or cabal.config) with the correct path.
 
 packages: .
-
-repository local-hackage
-  url: file+noindex:///opt/hackage/packages
 
 -- Disable tests to avoid test-only dependency conflicts
 tests: False
@@ -15,7 +13,7 @@ package *
   optimization: 2
   library-stripping: True
   executable-stripping: True
-  ghc-options: -j -split-sections -optc-Os -optl=-pthread
+  ghc-options: -j4 -split-sections -optc-Os -optl=-pthread
 
 -- Embed data files in the pandoc binary, disable HTTP support
 package pandoc
